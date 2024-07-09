@@ -60,7 +60,7 @@ void OnDataRecv(const uint8_t * mac_addr, const uint8_t *incomingData, int len) 
 const char index_html[] PROGMEM = R"rawliteral(
 <!DOCTYPE HTML><html>
 <head>
-  <title>在籍確認</title>
+  <title>Present Absent Check</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <style>
     body {
@@ -100,17 +100,33 @@ const char index_html[] PROGMEM = R"rawliteral(
   </style>
 </head>
 <body>
-  <h1>在籍確認</h1>
+  <h1>Present Absent Check</h1>
   <div id="container">
     <!-- 座席の状態はJavaScriptで追加します -->
   </div>
   <script>
+     var source = new EventSource('/events');
+    source.addEventListener('open', function(e) {
+      console.log("Events Connected");
+    }, false);
+    source.addEventListener('error', function(e) {
+      if (e.target.readyState != EventSource.OPEN) {
+        console.log("Events Disconnected");
+      }
+    }, false);
+    source.addEventListener('new_readings', function(e) {
+      console.log("new_readings", e.data);
+      var obj = JSON.parse(e.data);
+      var seatElement = document.getElementById(`seat-${obj.id}`);
+      if (seatElement) {
+        seatElement.className = `seat ${obj.present ? 'occupied' : 'vacant'}`;
+      }
     const seats = [
-      { id: 1, occupied: true, name: '' },
-      { id: 2, occupied: false, name: '' }
+      { id: 1, occupied: obj.present, name: '' },
+      { id: 2, occupied: obj.present, name: '' }
     ];
 
-    const container = document.getElementById('container');
+        const container = document.getElementById('container');
     seats.forEach(seat => {
       const seatElement = document.createElement('div');
       seatElement.className = `seat ${seat.occupied ? 'occupied' : 'vacant'}`;
@@ -119,7 +135,7 @@ const char index_html[] PROGMEM = R"rawliteral(
 
       const nameInput = document.createElement('input');
       nameInput.type = 'text';
-      nameInput.placeholder = '名前';
+      nameInput.placeholder = 'name';
       nameInput.value = seat.name;
       nameInput.addEventListener('change', (event) => {
         seat.name = event.target.value;
@@ -149,6 +165,9 @@ const char index_html[] PROGMEM = R"rawliteral(
 
     container.addEventListener('dragover', dragOver);
     container.addEventListener('drop', drop);
+    }, false);
+
+
 
     function dragStart(event) {
       event.dataTransfer.setData('text/plain', event.target.id);
@@ -172,27 +191,9 @@ const char index_html[] PROGMEM = R"rawliteral(
       localStorage.setItem(`${id}-position`, JSON.stringify(position));
     }
 
-    var source = new EventSource('/events');
-    source.addEventListener('open', function(e) {
-      console.log("Events Connected");
-    }, false);
-    source.addEventListener('error', function(e) {
-      if (e.target.readyState != EventSource.OPEN) {
-        console.log("Events Disconnected");
-      }
-    }, false);
-    source.addEventListener('new_readings', function(e) {
-      console.log("new_readings", e.data);
-      var obj = JSON.parse(e.data);
-      var seatElement = document.getElementById(`seat-${obj.id}`);
-      if (seatElement) {
-        seatElement.className = `seat ${obj.present ? 'occupied' : 'vacant'}`;
-      }
-    }, false);
-  </script>
+</script>
 </body>
 </html>
-
 )rawliteral";
 
 void setup() {
