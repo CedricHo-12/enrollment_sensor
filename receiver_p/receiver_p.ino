@@ -60,79 +60,140 @@ void OnDataRecv(const uint8_t * mac_addr, const uint8_t *incomingData, int len) 
 const char index_html[] PROGMEM = R"rawliteral(
 <!DOCTYPE HTML><html>
 <head>
-  <title>ESP-NOW DASHBOARD</title>
+  <title>在籍確認</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.2/css/all.css" integrity="sha384-fnmOCqbTlWIlj8LyTjo7mOUStjsKC4pOpQbqyi7RrhN7udi9RwhKkMHpvLbHG9Sr" crossorigin="anonymous">
-  <link rel="icon" href="data:,">
   <style>
-    html {font-family: Arial; display: inline-block; text-align: center;}
-    p {  font-size: 1.2rem;}
-    body {  margin: 0;}
-    .topnav { overflow: hidden; background-color: #2f4468; color: white; font-size: 1.7rem; }
-    .content { padding: 20px; }
-    .card { background-color: white; box-shadow: 2px 2px 12px 1px rgba(140,140,140,.5); }
-    .cards { max-width: 700px; margin: 0 auto; display: grid; grid-gap: 2rem; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
-    .reading { font-size: 2.8rem; }
-    .packet { color: #bebebe; }
-    .card.temperature { color: #fd7e14; }
-    .card.humidity { color: #1b78e2; }
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      margin-top: 50px;
+    }
+    .seat {
+      width: 100px;
+      height: 100px;
+      margin: 10px;
+      display: inline-block;
+      cursor: move;
+      border: 1px solid #000;
+      position: absolute;
+      text-align: center;
+      line-height: 100px;
+    }
+    .seat input {
+      width: 90%;
+      box-sizing: border-box;
+      margin-top: 35px; /* Adjusted to position the input box correctly */
+    }
+    .occupied {
+      background-color: green;
+    }
+    .vacant {
+      background-color: red;
+    }
+    #container {
+      position: relative;
+      width: 100%;
+      height: 80vh;
+      border: 1px solid #ccc;
+      margin: 0 auto;
+    }
   </style>
 </head>
 <body>
-  <div class="topnav">
-    <h3>ESP-NOW DASHBOARD</h3>
+  <h1>在籍確認</h1>
+  <div id="container">
+    <!-- 座席の状態はJavaScriptで追加します -->
   </div>
-  <div class="content">
-    <div class="cards">
-      <div class="card temperature">
-        <h4><i class="fas fa-thermometer-half"></i> BOARD #1 - TEMPERATURE</h4><p><span class="reading"><span id="t1"></span> &deg;C</span></p><p class="packet">Reading ID: <span id="rt1"></span></p>
-      </div>
-      <div class="card humidity">
-        <h4><i class="fas fa-tint"></i> BOARD #1 - HUMIDITY</h4><p><span class="reading"><span id="h1"></span> &percnt;</span></p><p class="packet">Reading ID: <span id="rh1"></span></p>
-      </div>
-      <div class="card temperature">
-        <h4><i class="fas fa-thermometer-half"></i> BOARD #2 - TEMPERATURE</h4><p><span class="reading"><span id="t2"></span> &deg;C</span></p><p class="packet">Reading ID: <span id="rt2"></span></p>
-      </div>
-      <div class="card humidity">
-        <h4><i class="fas fa-tint"></i> BOARD #2 - HUMIDITY</h4><p><span class="reading"><span id="h2"></span> &percnt;</span></p><p class="packet">Reading ID: <span id="rh2"></span></p>
-      </div>
-    </div>
-  </div>
-<script>
-if (!!window.EventSource) {
- var source = new EventSource('/events');
- 
- source.addEventListener('open', function(e) {
-  console.log("Events Connected");
- }, false);
- source.addEventListener('error', function(e) {
-  if (e.target.readyState != EventSource.OPEN) {
-    console.log("Events Disconnected");
-  }
- }, false);
- 
- source.addEventListener('message', function(e) {
-  console.log("message", e.data);
- }, false);
- 
- source.addEventListener('new_readings', function(e) {
-  console.log("new_readings", e.data);
-  var obj = JSON.parse(e.data);
+  <script>
+    const seats = [
+      { id: 1, occupied: true, name: '' },
+      { id: 2, occupied: false, name: '' }
+    ];
 
-  if (obj.present == 1){
-    document.getElementById("t"+obj.id).innerHTML = 'PRESENT';
-  }else {
-    document.getElementById("t"+obj.id).innerHTML = 'ABSENT';
-  }
-  document.getElementById("t"+obj.id).innerHTML = obj.present;
-  document.getElementById("h"+obj.id).innerHTML = obj.humidity.toFixed(2);
-  document.getElementById("rt"+obj.id).innerHTML = obj.readingId;
-  document.getElementById("rh"+obj.id).innerHTML = obj.readingId;
- }, false);
-}
-</script>
+    const container = document.getElementById('container');
+    seats.forEach(seat => {
+      const seatElement = document.createElement('div');
+      seatElement.className = `seat ${seat.occupied ? 'occupied' : 'vacant'}`;
+      seatElement.id = `seat-${seat.id}`;
+      seatElement.draggable = true;
+
+      const nameInput = document.createElement('input');
+      nameInput.type = 'text';
+      nameInput.placeholder = '名前';
+      nameInput.value = seat.name;
+      nameInput.addEventListener('change', (event) => {
+        seat.name = event.target.value;
+        localStorage.setItem(`seat-${seat.id}-name`, seat.name);
+      });
+
+      seatElement.appendChild(nameInput);
+
+      const savedPosition = localStorage.getItem(`seat-${seat.id}-position`);
+      if (savedPosition) {
+        const position = JSON.parse(savedPosition);
+        seatElement.style.left = `${position.left}px`;
+        seatElement.style.top = `${position.top}px`;
+      } else {
+        seatElement.style.left = `${Math.random() * 300}px`;
+        seatElement.style.top = `${Math.random() * 300}px`;
+      }
+
+      const savedName = localStorage.getItem(`seat-${seat.id}-name`);
+      if (savedName) {
+        nameInput.value = savedName;
+      }
+
+      container.appendChild(seatElement);
+      seatElement.addEventListener('dragstart', dragStart);
+    });
+
+    container.addEventListener('dragover', dragOver);
+    container.addEventListener('drop', drop);
+
+    function dragStart(event) {
+      event.dataTransfer.setData('text/plain', event.target.id);
+    }
+
+    function dragOver(event) {
+      event.preventDefault();
+    }
+
+    function drop(event) {
+      event.preventDefault();
+      const id = event.dataTransfer.getData('text');
+      const seat = document.getElementById(id);
+      const rect = container.getBoundingClientRect();
+      const left = event.clientX - rect.left - seat.offsetWidth / 2;
+      const top = event.clientY - rect.top - seat.offsetHeight / 2;
+      seat.style.left = `${left}px`;
+      seat.style.top = `${top}px`;
+
+      const position = { left, top };
+      localStorage.setItem(`${id}-position`, JSON.stringify(position));
+    }
+
+    var source = new EventSource('/events');
+    source.addEventListener('open', function(e) {
+      console.log("Events Connected");
+    }, false);
+    source.addEventListener('error', function(e) {
+      if (e.target.readyState != EventSource.OPEN) {
+        console.log("Events Disconnected");
+      }
+    }, false);
+    source.addEventListener('new_readings', function(e) {
+      console.log("new_readings", e.data);
+      var obj = JSON.parse(e.data);
+      var seatElement = document.getElementById(`seat-${obj.id}`);
+      if (seatElement) {
+        seatElement.className = `seat ${obj.present ? 'occupied' : 'vacant'}`;
+      }
+    }, false);
+  </script>
 </body>
-</html>)rawliteral";
+</html>
+
+)rawliteral";
 
 void setup() {
   // Initialize Serial Monitor
