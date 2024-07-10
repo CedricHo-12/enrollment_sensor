@@ -101,16 +101,15 @@ const char index_html[] PROGMEM = R"rawliteral(
 </head>
 <body>
   <h1>Present Absent Check</h1>
-  <div class="container">
+  <div id="container">
     <div id="seat-1" class="seat vacant" draggable="true">
       <input type="text" id="name-input-1" placeholder="name">
     </div>
-  </div>
-  <div class="container">
     <div id="seat-2" class="seat vacant" draggable="true">
       <input type="text" id="name-input-2" placeholder="name">
     </div>
   </div>
+    
   <script>
      var source = new EventSource('/events');
     source.addEventListener('open', function(e) {
@@ -132,7 +131,6 @@ const char index_html[] PROGMEM = R"rawliteral(
         seatElement.className = `seat ${obj.present ? 'occupied' : 'vacant'}`;
       }
 
-     const container = document.getElementsByClassName("container");
   
 
       const nameInputs = document.querySelectorAll('input');
@@ -140,6 +138,11 @@ const char index_html[] PROGMEM = R"rawliteral(
         input.addEventListener('change', (event) => {
         seatElement.name = event.target.value;
         localStorage.setItem(`seat-${obj.id}-name`, seatElement.name);
+
+      const savedName = localStorage.getItem(`seat-${obj.id}-name`);
+      if (savedName) {
+        input.value = savedName;
+      }
       });
       });
 
@@ -153,18 +156,14 @@ const char index_html[] PROGMEM = R"rawliteral(
         seatElement.style.top = `${Math.random() * 300}px`;
       }
 
-      const savedName = localStorage.getItem(`seat-${obj.id}-name`);
-      if (savedName) {
-        nameInput.value = savedName;
-      }
 
-      container.appendChild(seatElement);
       seatElement.addEventListener('dragstart', dragStart);
-      container.addEventListener('dragover', dragOver);
-      container.addEventListener('drop', drop);
-      
 
     },false);
+
+    const container = document.getElementById('container');
+    container.addEventListener('dragover', dragOver);
+    container.addEventListener('drop', drop);
 
 
     function dragStart(event) {
