@@ -101,10 +101,12 @@ const char index_html[] PROGMEM = R"rawliteral(
 </head>
 <body>
   <h1>Present Absent Check</h1>
-  <div id="container">
+  <div class="container">
     <div id="seat-1" class="seat vacant" draggable="true">
       <input type="text" id="name-input-1" placeholder="name">
     </div>
+  </div>
+  <div class="container">
     <div id="seat-2" class="seat vacant" draggable="true">
       <input type="text" id="name-input-2" placeholder="name">
     </div>
@@ -120,34 +122,28 @@ const char index_html[] PROGMEM = R"rawliteral(
       }
     }, false);
 
-    var obj;
-    var seatElement;
+  
+  
     source.addEventListener('new_readings', function(e) {
       console.log("new_readings", e.data);
-      obj = JSON.parse(e.data);
-      seatElement = document.getElementById(`seat-${obj.id}`);
+      var obj = JSON.parse(e.data);
+      var seatElement = document.getElementById(`seat-${obj.id}`);
       if (seatElement) {
         seatElement.className = `seat ${obj.present ? 'occupied' : 'vacant'}`;
       }
-    },false);
 
-    const seats = [
-      { id: 1, name: '' },
-      { id: 2, name: '' }
-    ];
-
-    const container = document.getElementById('container');
-    seats.forEach(seat => {
+     const container = document.getElementsByClassName("container");
+  
 
       const nameInputs = document.querySelectorAll('input');
       nameInputs.forEach(input => {
         input.addEventListener('change', (event) => {
-        seat.name = event.target.value;
-        localStorage.setItem(`seat-${seat.id}-name`, seat.name);
+        seatElement.name = event.target.value;
+        localStorage.setItem(`seat-${obj.id}-name`, seatElement.name);
       });
       });
 
-      const savedPosition = localStorage.getItem(`seat-${seat.id}-position`);
+      const savedPosition = localStorage.getItem(`seat-${obj.id}-position`);
       if (savedPosition) {
         const position = JSON.parse(savedPosition);
         seatElement.style.left = `${position.left}px`;
@@ -157,19 +153,18 @@ const char index_html[] PROGMEM = R"rawliteral(
         seatElement.style.top = `${Math.random() * 300}px`;
       }
 
-      const savedName = localStorage.getItem(`seat-${seat.id}-name`);
+      const savedName = localStorage.getItem(`seat-${obj.id}-name`);
       if (savedName) {
         nameInput.value = savedName;
       }
 
       container.appendChild(seatElement);
       seatElement.addEventListener('dragstart', dragStart);
-    });
+      container.addEventListener('dragover', dragOver);
+      container.addEventListener('drop', drop);
+      
 
-    container.addEventListener('dragover', dragOver);
-    container.addEventListener('drop', drop);
-    
-
+    },false);
 
 
     function dragStart(event) {
