@@ -8,7 +8,7 @@
 #include <esp_wifi.h>
 #include <WiFi.h>
 
-#define BOARD_ID 2
+#define BOARD_ID 1   //change the ID for each Sender
 
 // REPLACE WITH THE RECEIVER'S MAC Address
 uint8_t broadcastAddress[] = {0x08, 0xb6, 0x1f, 0xef, 0xbe, 0x40};
@@ -33,7 +33,7 @@ void OnDataSent(const uint8_t *mac_addr, esp_now_send_status_t status) {
 }
 
 // Insert your SSID
-constexpr char WIFI_SSID[] = "Cedric";
+constexpr char WIFI_SSID[] = "********";    
 
 int32_t getWiFiChannel(const char *ssid) {
   if (int32_t n = WiFi.scanNetworks()) {
@@ -131,5 +131,5 @@ void loop() {
   else {
     Serial.println("Error sending the data");
   }
-  delay(10000);
+  delay(5000);
 }

@@ -8,13 +8,12 @@
 #include <WiFi.h>
 #include <ESPAsyncWebServer.h>
 #include <Arduino_JSON.h>
-#include "SPIFFS.h"
 #include <AsyncTCP.h>
 
 
 // Replace with your network credentials (STATION)
-const char* ssid = "Cedric";
-const char* password = "hellofromtheotherside";
+const char* ssid = "******";
+const char* password = "*******";
 
 // Structure example to receive data
 // Must match the sender structure
@@ -27,15 +26,8 @@ struct_message incomingReadings;
 
 JSONVar board;
 
-AsyncWebServer server(80);
-AsyncEventSource events("/events");
-
-void initSPIFFS() {
-  if (!SPIFFS.begin()) {
-    Serial.println("An error has occurred while mounting SPIFFS");
-  }
-  Serial.println("SPIFFS mounted successfully");
-}
+AsyncWebServer server(80);  //default port for HTTP communication
+AsyncEventSource events("/events");  //path to receive server-sent events
 
 // callback function that will be executed when data is received
 void OnDataRecv(const uint8_t * mac_addr, const uint8_t *incomingData, int len) { 
@@ -50,7 +42,7 @@ void OnDataRecv(const uint8_t * mac_addr, const uint8_t *incomingData, int len) 
   board["id"] = incomingReadings.id;
   board["present"] = incomingReadings.present;
   String jsonString = JSON.stringify(board);
-  events.send(jsonString.c_str(), "new_readings", millis());
+  events.send(jsonString.c_str(), "new_readings", millis()); //send JSON string over SSE
   
   Serial.printf("Board ID %u: %u bytes\n", incomingReadings.id, len);
   Serial.printf("isPresent : %s \n", incomingReadings.present ? "true" : "false");
@@ -103,15 +95,15 @@ const char index_html[] PROGMEM = R"rawliteral(
   <h1>Present Absent Check</h1>
   <div id="container">
     <div id="seat-1" class="seat vacant" draggable="true">
-      <input type="text" id="name-input-1" placeholder="name">
+      <input type="text" data-seat-id="1" placeholder="name1">
     </div>
     <div id="seat-2" class="seat vacant" draggable="true">
-      <input type="text" id="name-input-2" placeholder="name">
+      <input type="text" data-seat-id="2" placeholder="name2">
     </div>
   </div>
     
   <script>
-     var source = new EventSource('/events');
+    var source = new EventSource('/events');
     source.addEventListener('open', function(e) {
       console.log("Events Connected");
     }, false);
@@ -127,6 +119,7 @@ const char index_html[] PROGMEM = R"rawliteral(
       console.log("new_readings", e.data);
       var obj = JSON.parse(e.data);
       var seatElement = document.getElementById(`seat-${obj.id}`);
+    
       if (seatElement) {
         seatElement.className = `seat ${obj.present ? 'occupied' : 'vacant'}`;
       }
@@ -135,14 +128,17 @@ const char index_html[] PROGMEM = R"rawliteral(
 
       const nameInputs = document.querySelectorAll('input');
       nameInputs.forEach(input => {
-        input.addEventListener('change', (event) => {
-        seatElement.name = event.target.value;
-        localStorage.setItem(`seat-${obj.id}-name`, seatElement.name);
 
-      const savedName = localStorage.getItem(`seat-${obj.id}-name`);
+      const seatId = input.getAttribute('data-seat-id');
+
+      const savedName = localStorage.getItem(`seat-${seatId}-name`);
       if (savedName) {
         input.value = savedName;
       }
+      
+      input.addEventListener('change', (event) => {
+        const newName = event.target.value;
+        localStorage.setItem(`seat-${seatId}-name`, newName);
       });
       });
 
