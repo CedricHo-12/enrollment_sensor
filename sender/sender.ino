@@ -1,17 +1,11 @@
-/*********
-  Rui Santos & Sara Santos - Random Nerd Tutorials
-  Complete project details at https://RandomNerdTutorials.com/esp-now-many-to-one-esp32/
-  Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files.
-  The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
-*********/
 #include <esp_now.h>
 #include <esp_wifi.h>
 #include <WiFi.h>
 
-#define BOARD_ID 1   //change the ID for each Sender
+#define BOARD_ID 2 //change the ID for each Sender
 
 // REPLACE WITH THE RECEIVER'S MAC Address
-uint8_t broadcastAddress[] = {0x08, 0xb6, 0x1f, 0xef, 0xbe, 0x40};
+uint8_t broadcastAddress[] = {0x08, 0xb6, 0x1f, 0xef, 0xbe, 0x40};  //Receiver mac address
 
 // Structure example to send data
 // Must match the receiver structure
@@ -33,7 +27,7 @@ void OnDataSent(const uint8_t *mac_addr, esp_now_send_status_t status) {
 }
 
 // Insert your SSID
-constexpr char WIFI_SSID[] = "********";    
+constexpr char WIFI_SSID[] = "*****"; //wifi name
 
 int32_t getWiFiChannel(const char *ssid) {
   if (int32_t n = WiFi.scanNetworks()) {
@@ -51,7 +45,7 @@ const int trigPin = 25;
 const int echoPin = 26;  
 
 //Global variables
-const int targetDistance = 10; //centimeter
+const int targetDistance = 40; //distance in centimeters
 
 
 bool calDistance() {
@@ -131,5 +125,5 @@ void loop() {
   else {
     Serial.println("Error sending the data");
   }
-  delay(5000);
+  delay(5000);  //interval data sender
 }

@@ -1,9 +1,3 @@
-/*
-  Rui Santos & Sara Santos - Random Nerd Tutorials
-  Complete project details at https://RandomNerdTutorials.com/esp32-esp-now-wi-fi-web-server/
-  Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files.  
-  The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
-*/
 #include <esp_now.h>
 #include <WiFi.h>
 #include <ESPAsyncWebServer.h>
@@ -12,8 +6,8 @@
 
 
 // Replace with your network credentials (STATION)
-const char* ssid = "******";
-const char* password = "*******";
+const char* ssid = "******"; //wifi name
+const char* password = "*******"; //wifi password
 
 // Structure example to receive data
 // Must match the sender structure
@@ -96,6 +90,9 @@ const char index_html[] PROGMEM = R"rawliteral(
   <div id="container">
     <div id="seat-1" class="seat vacant" draggable="true">
       <input type="text" data-seat-id="1" placeholder="name1">
+    </div>
+    <div id="seat-2" class="seat vacant" draggable="true">
+      <input type="text" data-seat-id="2" placeholder="name2">
     </div>
     <div id="seat-2" class="seat vacant" draggable="true">
       <input type="text" data-seat-id="2" placeholder="name2">
@@ -235,7 +232,7 @@ void setup() {
  
 void loop() {
   static unsigned long lastEventTime = millis();
-  static const unsigned long EVENT_INTERVAL_MS = 5000;
+  static const unsigned long EVENT_INTERVAL_MS = 5000; 
   if ((millis() - lastEventTime) > EVENT_INTERVAL_MS) {
     events.send("ping",NULL,millis());
     lastEventTime = millis();
